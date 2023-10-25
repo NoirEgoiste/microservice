@@ -1,0 +1,36 @@
+version: "3.9"
+
+x-app: &default-app
+  build: .
+  restart: always
+
+x-env: &env
+  env_file:
+    - .env
+
+services:
+  micrsorvice:
+    <<: [ *default-app, *env ]
+    container_name: service-back
+    expose:
+      - 8000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    <<: *env
+    container_name: service-mongo
+    image: mongo
+    expose:
+      - 27017
+    healthcheck:
+      test: mongo -e MONGO_INITDB_ROOT_USERNAME=${DB_USER} e- MONGO_INITDB_ROOT_PASSWORD=${DB_PASS}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - microservice_mongo:/data/db
+
+volumes:
+  microservice_mongo:
